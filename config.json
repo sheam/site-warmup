@@ -1,0 +1,18 @@
+{
+    "local": {
+        "site_user": "sam@yahoo.com",
+        "site_pass": "xxx",
+        "results_dir": "results",
+        "input": "local_warmup_list.txt",
+        "domain": "http://localhost:17257",
+        "auth0_tenant": "testing-test2",
+        "tenant": "duff"
+    },
+    "dev": {
+        "domain": "https://dev.duff.net",
+        "site_user": "sam@yahoo.com",
+        "input": "prod_warmup_list.txt",
+        "auth0_tenant": "dev-test2",
+        "tenant": "duff"
+    }
+}
