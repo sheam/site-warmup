@@ -1,0 +1,5 @@
+#URL|Test pattern|no-session-flag
+#comments and blank lines are allowed
+AdminUsers|Manage Users
+Home/Dashboard|Dashboard
+InvalidSessionError|Error has occurred|no-session
