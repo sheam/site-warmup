@@ -3,7 +3,7 @@
         "site_user": "sam@yahoo.com",
         "site_pass": "xxx",
         "results_dir": "results",
-        "input": "local_warmup_list.txt",
+        "input": "local_url_list.txt",
         "domain": "http://localhost:17257",
         "auth0_tenant": "testing-test2",
         "tenant": "duff"
