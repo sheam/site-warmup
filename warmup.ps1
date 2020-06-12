@@ -104,67 +104,13 @@ function SaveContent([string]$urlPath, [string]$content)
 }
 
 $Script:session = $null
-function LoginForms
-{
-    if( -not $Script:config.login )
-    {
-        Log('You must have a login path specified in the configuration')
-        exit 1
-    }
-
-    $url = BnUrl($Script:config.login)
-    LogAction("Logging into $url")
-
-    $headers = GetHeaders
-
-    try 
-    {
-        $login = Invoke-WebRequest $url -SessionVariable Script:session -UseBasicParsing -Headers $headers
-    }
-    catch
-    {
-        LogError("Exception getting login form: $($_.Exception.Message)")
-        exit 1
-    }
-
-    $antiforgery = $login.InputFields[0].value
-    
-    $fields = @{ 
-        __RequestVerificationToken = $antiforgery;
-        Email = $Script:config.site_user; 
-        Password = $Script:config.site_pass; 
-        RememberMe = 'true';
-    }
-
-    try 
-    {
-        $login = Invoke-WebRequest -Uri $url -Method 'POST' -WebSession $Script:session -Body $fields -UseBasicParsing -Headers $headers
-    }
-    catch
-    {
-        #for some reason with basic auth we get a 401 even though the login succeeds
-        #TODO: fix if we ever get a solution to broken Invoke-Webrequest
-        # https://stackoverflow.com/questions/52637039/invoke-webrequest-gets-401-on-post-but-not-on-get-with-basic-auth
-        LogError("Exception sending login info: $($_.Exception.Message)")
-        exit 1
-    }
-
-    if( $login.Content.Contains('Login to your account') )
-    {
-        LogError('Failed to log into user account')
-        exit 1
-    }
-
-    SaveContent -urlPath $Script:config.login -content $login.Content
-    LogOk
-}
-
 function LoginAuth0
 {
     LogAction 'Logging into Auth0'
 
+    $timeout = 4 * 60; #things can be pretty slow the first time we hit the site
     $url = BnUrl('/auth/login?fromSignIn=True')
-    $login = Invoke-WebRequest $url -UseBasicParsing -SessionVariable Script:session -Method 'GET'
+    $login = Invoke-WebRequest $url -UseBasicParsing -SessionVariable Script:session -Method 'GET' -TimeoutSec $timeout
     $match = [regex]::Match($login.Content, "var config = JSON\.parse\(decodeURIComponent\(escape\(window.atob\('([a-zA-Z0-9=]+)'\)\)\)\);")
     if($match.Success)
     {
@@ -206,7 +152,7 @@ function LoginAuth0
     }
 
     $post_url = "https://$($Script:config.auth0_tenant).auth0.com/usernamepassword/login"
-    $post_json = Invoke-WebRequest $post_url -UseBasicParsing -WebSession $Script:session -Method 'POST' -ContentType 'application/json' -Body ($fields|ConvertTo-Json)
+    $post_json = Invoke-WebRequest $post_url -UseBasicParsing -WebSession $Script:session -Method 'POST' -ContentType 'application/json' -TimeoutSec $timeout -Body ($fields|ConvertTo-Json)
 
     $match = [regex]::Match($post_json.Content, '<input\s+type="\w+"\s+name="wresult"\s+value="([^>]+)">')
     if( -not $match.Success )
@@ -230,7 +176,7 @@ function LoginAuth0
         wctx = $wctx | ConvertTo-Json -Compress
     }
     $url = "https://$($Script:config.auth0_tenant).auth0.com/login/callback"
-    $post_form = Invoke-WebRequest $url -UseBasicParsing -WebSession $Script:session -Method 'POST' -ContentType 'application/x-www-form-urlencoded' -Body $formFields
+    $post_form = Invoke-WebRequest $url -UseBasicParsing -WebSession $Script:session -Method 'POST' -ContentType 'application/x-www-form-urlencoded' -TimeoutSec $timeout -Body $formFields
     $match = [regex]::Match($post_form.Content, '<input\s+type="\w+"\s+name="code"\s+value="([^>]+)"\s*/>')
     if( -not $match.Success )
     {
@@ -261,7 +207,7 @@ function LoginAuth0
         state = $state
     }
     $url = BnUrl('/signin-auth0')
-    $result = Invoke-WebRequest $url -UseBasicParsing -WebSession $Script:session -Method 'POST' -ContentType 'application/x-www-form-urlencoded' -Body $formFields
+    $result = Invoke-WebRequest $url -UseBasicParsing -WebSession $Script:session -Method 'POST' -ContentType 'application/x-www-form-urlencoded' -TimeoutSec $timeout -Body $formFields
     if($result.StatusCode -eq 200)
     {
         LogOk
@@ -274,7 +220,7 @@ function LoginAuth0
 
     LogAction("Selecting tenant $($Script:config.tenant)")
     $url = BnUrl("/auth/select/$($Script:config.tenant)")
-    $result = Invoke-WebRequest $url -UseBasicParsing -WebSession $Script:session -Method 'GET'
+    $result = Invoke-WebRequest $url -UseBasicParsing -WebSession $Script:session -Method 'GET' -TimeoutSec $timeout
     if($result.StatusCode -eq 200)
     {
         LogOk
