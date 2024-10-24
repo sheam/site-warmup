@@ -1,6 +1,9 @@
 # Site Warmup
 Warms up a website after deployment. Features the ability to take multiple environment configurations (e.g., dev/test/prod/etc), handle Auth0 forms authentication, uses a file with a list of URL's, simple test patterns, and the ability to use sesssion or not. The script does not currently handle Javascript, so dynamic client side redered content can not be tested.
 
+## Status
+I no longer user or maintaint this project, as we have switched to using playwright. 
+
 ## Usage
 ### Configuration
 #### Environments
